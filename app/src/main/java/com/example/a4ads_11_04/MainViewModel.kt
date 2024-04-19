@@ -8,33 +8,21 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import retrofit2.HttpException
 
-class MainViewModel : ViewModel() {
+class MainViewModel(private val repository: MusicasService) : ViewModel() {
 
-    var isLoading = MutableLiveData(false)
-        private set
-
-    var isSuccess = MutableLiveData<List<Musica>>(emptyList())
-        private set
-
-    var isError = MutableLiveData(false)
-        private set
-
-    var errorMessage = MutableLiveData("")
+    var state = MutableLiveData<MainScreenState>(MainScreenState.Loading)
         private set
 
 
     fun getAllMusicas() {
-
         viewModelScope.launch {
             try {
-                isLoading.value = true
+                state.value = MainScreenState.Loading
                 val musicaRepository = ApiConfig.getInstance().create(MusicasService::class.java)
                 val response = musicaRepository.getAll()
                 if (response.isSuccessful) {
                     val list = response.body() ?: emptyList()
-                    isSuccess.value = list
-                    isLoading.value = false
-                    isError.value = false
+                    state.value = MainScreenState.Success(data = list)
                 } else {
                     throw Exception("Erro desconhecido")
                 }
@@ -45,13 +33,9 @@ class MainViewModel : ViewModel() {
                     404 -> "Parametros incorretos"
                     else -> "Erro desconhecido"
                 }
-                isError.value = true
-                errorMessage.value = message
-                isLoading.value = false
+                state.value = MainScreenState.Error(message)
             } catch (e: Exception) {
-                isError.value = true
-                errorMessage.value = e.message
-                isLoading.value = false
+                state.value = MainScreenState.Error(e.message ?: "Erro desconhecido")
             }
         }
     }

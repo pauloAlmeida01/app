@@ -44,37 +44,40 @@ fun Greeting(name: String, modifier: Modifier = Modifier) {
     )
 }
 
-//@Preview(showBackground = true)
-//@Composable
-//fun GreetingPreview() {
-//    _4ADS_11_04Theme {
-//        Greeting("Android")
-//    }
-//}
+
 
 
 @Composable
 fun App(vm: MainViewModel) {
 
 
-    val isLoading by vm.isLoading.observeAsState()
-    val isSuccess by vm.isSuccess.observeAsState()
-    val isError by vm.isError.observeAsState()
-    val errorMessage by vm.errorMessage.observeAsState()
+    val state by vm.state.observeAsState()
 
-    if(isLoading == true) {
-        LoadingBar()
-    } else if(isError == true) {
-        ErrorView(message = errorMessage!!) {
-            vm.getAllMusicas()
+    when (state) {
+        is MainScreenState.Loading -> {
+            LoadingBar()
         }
-    }else {
-        LazyColumn {
-            items(isSuccess!!) {
-                MusicaCard(it)
+        is MainScreenState.Error, null -> {
+            val errorMessage = (state as? MainScreenState.Error)?.message ?: "Erro desconhecido"
+            ErrorView(message = errorMessage) {
+                vm.getAllMusicas()
+            }
+
+        }
+        is MainScreenState.Success -> {
+            val musicas = (state as MainScreenState.Success).data
+            LazyColumn (modifier = Modifier.fillMaxSize()) {
+               items(musicas) { musica ->
+                   MusicaCard(data = musica)
+               }
             }
         }
     }
+
+
+
+
+
 
 }
 
